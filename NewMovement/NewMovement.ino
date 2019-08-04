@@ -1,4 +1,5 @@
-#include <Movementi.h>
+
+      #include <Movementi.h>
 
 
 
@@ -98,12 +99,12 @@
 //59->Front Left
 //63->Back Left
 //74-button
-int ENR=58;
-int ENL=57;
-int RF=66;
-int LB=63;
-int RB=72;
-int LF=59;
+int ENR=67;
+int ENL=70;
+int RB=66;
+int LF=63;
+int RF=44;
+int LB=59;
 int button=74;
 Movementi mycar(ENR,ENL,RF,LF,RB,LB);
 void setupNewMovement() {
@@ -116,7 +117,7 @@ void loopNewMovement() {
   if(!(digitalRead(button)==HIGH)&&!prevbutton){
     //change duty cycle
     i++;
-    if(i==3){
+    if(i==4){
       i=0;}
 //    dutycycle = duty[ele];
     prevbutton = true;
@@ -134,11 +135,12 @@ void loopNewMovement() {
 
 void movement(int i) {
   if(i == 0){
-    mycar.forward(50);}
+    mycar.forward(75);}
   else if(i == 1){
-    mycar.left(75,25);}
+    mycar.left(75,75);}
   else if(i == 2){
-    mycar.right(75,25);}
-  else{
-    mycar.forward(0);}
+    mycar.right(75,75);}
+  else if(i == 3){
+    mycar.stopi();
+    }
 }

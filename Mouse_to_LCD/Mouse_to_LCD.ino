@@ -111,11 +111,19 @@ Screen_HX8353E myScreen;
 
 #include "stdint.h"
 //change these to any gpio
+//64->Right Enable->ENA
+//65->Left Enable->ENB
+//66->Front Left->IN2
+//59->Front Right->IN4
+//63->Back Right ->IN3
+//72->Back Left->IN1
 int SCLK = 60;// This for Serial Clock
 int SDIO = 61;// Master Output
 int NCS  = 62;// Slave select
 int img[15][15];
 int img2[15][15];
+
+
 //-------------------------------------------------------------------------------------------
 
 
@@ -126,19 +134,16 @@ void setupMouse_to_LCD() {
   pinMode(SCLK, OUTPUT);
   pinMode(SDIO, OUTPUT);
   pinMode(NCS, OUTPUT);
-  mouse_reset();
   myScreen.begin();
   myScreen.setPenSolid(true);
   myScreen.setFontSolid(false);
-
+  
 }
 //---------------------------------------------------------------------------------------------
 
-
-
 //LOOP---------------------------------------------------------------------------------------
 void loopMouse_to_LCD() {
-  for (int i=0;i<15;i++){
+ for (int i=0;i<15;i++){
     for (int j=14;j>=0;j--){
       img[i][j]=readLoc(0x0b);
       img[i][j] &= 0x7F; // msb = valid bit
@@ -147,32 +152,14 @@ void loopMouse_to_LCD() {
         img2[i][j]=255;
       }
       else{
-        img2[i][j]=0;
+         img2[i][j]=0;
       }
-       int k=myScreen.calculateColour(img[i][j],img[i][j],img[i][j]);
+       int k=myScreen.calculateColour(img2[i][j],img2[i][j],img2[i][j]);
        myScreen.dRectangle((16*i)+40,(16*j),16,16,k);  
     }
   }
-  //LCD(img);
 }
 //-------------------------------------------------------------------------------------------
-
-
-
-//LCD Code
-void LCD(int a[15][15]){
-  myScreen.setPenSolid(true);
-  myScreen.setFontSolid(false);
-  for(int i=0; i<15; i++){ // top right corner, x address
-    for(int j=14; (int8_t)j>-1;j--){ // top right corner, y address
-    int k=myScreen.calculateColour(a[i][j],a[i][j],a[i][j]);
-    myScreen.dRectangle((16*i)+40,(16*j),16,16,k);  
-    } // x resolution: 320 - 240 = 80 therefore 40 offset from both x axis limits (makes a 240x240)
-}     // y resolution: 240p, 240/15 = 16
-}
-//
-
-
 
 
 
@@ -191,8 +178,6 @@ void mouse_reset(){
   digitalWrite(NCS, HIGH);
 }
 //-------------------------------------------------------------------------------------------
-
-
 
 
 
