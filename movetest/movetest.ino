@@ -136,8 +136,15 @@ int RB=66;
 int LF=63;
 int speedr=110;
 int speedl=110;
-int speedt=90;
+int speedt=130;
 char t;
+int sw=-1;
+int sw1=-1;
+int u=0;
+String label;
+String left;
+String right;
+String decision;
 void setup() {
   Serial.begin(9600);
   pinMode(ENR,OUTPUT);
@@ -154,7 +161,14 @@ void setup() {
   pinMode(NCS1, OUTPUT);
   myScreen.begin();
   int color5=myScreen.calculateColour(255,255,255);
-  wordPrinter(120,30,"SPI Mouse",color5);
+  wordPrinter(135,10,"SPI Mouse",color5);
+  int color2=myScreen.calculateColour(255,255,255);
+  int color1=myScreen.calculateColour(0,0,0);
+  myScreen.dRectangle(0,20,320,70,color1); 
+  wordPrinter(50,30,"Chosen Algorithm: ",color2);
+  wordPrinter(50,40,"Right Mouse Threshold:",color2);
+  wordPrinter(50,50,"Left Mouse Threshold:",color2);
+  wordPrinter(50,60,"Motor Driver Decision:",color2);
 }
 int f = 0;
 bool prevbutton = false;
@@ -179,15 +193,23 @@ void loop() {
        
         if(Serial.available()>0){
         t=Serial.read();
+        if(t=='x'){
+          sw++;
+          if(sw==4){
+            sw=0;
+          }
+        }
+        Serial.print(sw);
+        }
+
         int mover=readLoc(0x09,NCS,SDIO,SCLK);
         int mover2=readLoc(0x09,NCS1,SDIO1,SCLK1);
         
-        if(t=='a'){
+        if(sw==0){
          move(t);
         }
-        
-        
-        else if(t=='b'){
+               
+        else if(sw==1){
         if((mover>60)&&(mover2>60)){
           f=0;
         }
@@ -203,15 +225,104 @@ void loop() {
         movement(f);
         }
 
+        
+        
+        else if(sw==2){
+        double hf=hypothesis(mover,mover2,-4.8271,3.4835,3.5191,55.7921,34.2146,55.8806,33.9190);
+        double hl=hypothesis(mover,mover2,-4.3541,4.0564,-3.5129,55.7921,34.2146,55.8806,33.9190);
+        double hr=hypothesis(mover,mover2,-4.0140,-3.2228,3.6322,55.7921,34.2146,55.8806,33.9190);
+        double hs=hypothesis(mover,mover2,-2.1993,-3.5389,-3.6146,55.7921,34.2146,55.8806,33.9190);
+        if(max(max(hf,hl),max(hr,hs))==hf){
+          f=0;
+        }
+        else if(max(max(hf,hl),max(hr,hs))==hr){
+          f=1;
+        }
+        else if(max(max(hf,hl),max(hr,hs))==hl){
+          f=2;
+        }
+        else if(max(max(hf,hl),max(hr,hs))==hs){
+          f=3;
+        }
+        movement(f);
+        }
 
-        else if(t=='c'){
-          
+
+        else if(sw==3){
+        if((mover>60)&&(mover2>60)){
+         if(u==1){
+         move('s');  
+         u=0;
+         }
+         else if(u==0){
+         move(t);
+         }
         }
+        else if((mover<=60)&&(mover2>60)){
+          f=1;
+          movement(f);
+          u=1;
         }
-      }
+        else if((mover2<=60)&&(mover>60)){
+          f=2;
+          movement(f);
+          u=1;
+        }
+        else if((mover2<=60)&&(mover<=60)){
+          f=3;
+          movement(f);
+          u=1;
+        } 
+        }
+          if(sw==0){
+          label="Remote Controlled";
+         }
+         else if(sw==1){
+          label="Brute-Force";
+         }
+         else if(sw==2){
+          label="Trained Algorithm";
+         }
+         else if(sw==3){
+          label="Mixed Implementation";
+         }
+
+         
+        if((mover>60)&&(mover2>60)){
+          right="1";
+          left="1";
+          decision="Forward";
+         }
+        else if((mover<=60)&&(mover2>60)){
+          right="0";
+          left="1";
+          decision="Left";
+        }
+        else if((mover2<=60)&&(mover>60)){
+          right="1";
+          left="0";
+          decision="Right";
+        }
+        else if((mover2<=60)&&(mover<=60)){
+          right="0";
+          left="0";
+          decision="Stop";
+        } 
+       
+
+        
+        }}
+        int color2=myScreen.calculateColour(255,255,255);
+        int color1=myScreen.calculateColour(0,0,0);
+        myScreen.dRectangle(200,20,120,70,color1); 
+        wordPrinter(200,30,label,color2);
+        wordPrinter(200,40,right,color2);
+        wordPrinter(200,50,left,color2);
+        wordPrinter(200,60,decision,color2);
+        }
+        
 
   
-}
 void wordPrinter(int a,int b ,String c,int d){
   myScreen.setPenSolid(true);
   myScreen.setFontSolid(false);
@@ -302,7 +413,14 @@ digitalWrite(LF,LOW);
 
 
 //HYPOTHESIS FUNCTION------------------------------------------------------------------------
-
+double hypothesis(int mouse1, int mouse2, double theta0, double theta1, double theta2, double sigma1, double mean1,double sigma2, double mean2){
+  double mouse3=(mouse1-mean1)/sigma1;
+  double mouse4=(mouse2-mean1)/sigma2;
+  double h1=theta0+(theta1*mouse3)+(theta2*mouse4);
+  double h=1.0/(1.0+exp(-h1));
+  return h;
+}
+//-------------------------------------------------------------------------------------------
 
 //PUSH BYTE----------------------------------------------------------------------------------
 void pushbyte(uint8_t c,int SDIO,int SCLK){
